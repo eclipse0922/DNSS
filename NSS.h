@@ -123,7 +123,7 @@ private:
 	/**
 	 * \brief Normal(nx,ny,nz) 받아서 azimuth,polar 값계산
 	 *   논문과 iso rule 각각에서 azimuth, polar angle  지칭하는 것이 달라 iso rule에 맞춤
-	 *     i followed ISO rule for spherical coorinate system naming
+	 *     i followed ISO rule for spherical coordinate system naming
 	 *  iso rule    theta -  polar angle   (0~ pi) phi - azimuth angle( 0~2pi)
 	 *  논문         theta -  azimuth angle (0~2pi) phi - polar angle  ( 0~pi)
 	 *  pi== 180; 2pi ==360;
@@ -148,7 +148,7 @@ private:
 	/*
 	*
 	 *   \note 논문과 iso rule 각각에서 azimuth, polar angle 지칭하는 것이 달라 iso rule에 맞춤
-	 *      i followed ISO rule for spherical coorinate system naming   
+	 *      i followed ISO rule for spherical coordinate system naming   
 	 *		iso rule    theta -  polar angle   (0~180) phi - azimuth angle( 0~360)
 	 *		paper       theta -  azimuth angle (0~360) phi - polar angle( 0~180)
 	 */
