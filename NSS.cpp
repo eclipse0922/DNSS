@@ -174,8 +174,8 @@ void DNSS::sortIntoBucket()
 	std::wcout << L"niszeP_points : " << nSizePoints << std::endl;
 	int nSizeBucketR = m_bucketsizeR_azimuth * m_bucketsizeR_polar;
 	int nSizeBucketT = m_bucketsizeT_azimuth * m_bucketsizeT_polar;
-	// concurrent vector¿¡ ³Ö°í Á¤·ÄÇØ¼­ ¸â¹ö º¯¼ö¿¡ ´Ù½Ã ³Ö´Â´Ù.
-	// ÀÌÀ¯: concurrent_vector pop_back »ç¿ëºÒ°¡
+	// concurrent vectorì— ë„£ê³  ì •ë ¬í•´ì„œ ë©¤ë²„ ë³€ìˆ˜ì— ë‹¤ì‹œ ë„£ëŠ”ë‹¤.
+	// ì´ìœ : concurrent_vector pop_back ì‚¬ìš©ë¶ˆê°€
 	std::vector<concurrency::concurrent_vector<std::pair<int, float>>> bucketRotation;
 	std::vector<concurrency::concurrent_vector<int>> bucketTranslation;
 	m_vecForBIdx.clear();
@@ -192,7 +192,7 @@ void DNSS::sortIntoBucket()
 	m_bucketTranslation.resize(nSizeBucketT);
 
 
-	//¹öÄÏ °ø°£ È®º¸ - ¹öÄÏ¿¡ ¿ÏÀüÈ÷ ±ÕÀÏÇÏ°Ô µé¾î°¡´Â °ÍÀÌ ¾Æ´Ï°í ÇÑÂÊ¿¡ ¸ô¸±¼öµµ ÀÖ¾î, ¹öÄÏ »çÀÌÁî·Î ³ª´©Áö ¾Ê°í 10À¸·Î ³ª´®(ÀÓÀÇ·Î Á¤ÇÑ ¼ö)
+	//ë²„ì¼“ ê³µê°„ í™•ë³´ - ë²„ì¼“ì— ì™„ì „íˆ ê· ì¼í•˜ê²Œ ë“¤ì–´ê°€ëŠ” ê²ƒì´ ì•„ë‹ˆê³  í•œìª½ì— ëª°ë¦´ìˆ˜ë„ ìˆì–´, ë²„ì¼“ ì‚¬ì´ì¦ˆë¡œ ë‚˜ëˆ„ì§€ ì•Šê³  10ìœ¼ë¡œ ë‚˜ëˆ”(ì„ì˜ë¡œ ì •í•œ ìˆ˜)
 	Concurrency::parallel_for(0, nSizeBucketR, [&](int idx)
 	{
 		bucketRotation[idx].reserve(nSizePoints / 10);
@@ -243,7 +243,7 @@ void DNSS::sortIntoBucket()
 
 	Concurrency::parallel_for(0, nSizeBucketR, [&](int idx)
 	{
-		//pop_back¸¸ °¡´ÉÇÏ¹Ç·Î return°ªÀÌ Å« °ÍÀÌ µÚ·Î °¡µµ·Ï Á¤·Ä
+		//pop_backë§Œ ê°€ëŠ¥í•˜ë¯€ë¡œ returnê°’ì´ í° ê²ƒì´ ë’¤ë¡œ ê°€ë„ë¡ ì •ë ¬
 		std::sort(m_bucketRotation[idx].begin(), m_bucketRotation[idx].end(),
 			[](const std::pair<int, float>& lhs, const std::pair<int, float>& rhs) {
 			return lhs.second < rhs.second;
@@ -411,7 +411,7 @@ void DNSS::computeSphericalCoordinate(const glm::fvec3 &normal, float &coordinat
 {
 	float radian_azimuth = atan2(normal.y, normal.x);
 	float radian_polar = acos(normal.z);
-	coordinates_azimuth = radian_azimuth * m_pi_radian / m_pi2_degree;
-	coordinates_polar = radian_polar * m_pi_radian / m_pi2_degree;
+	coordinates_azimuth = radian_azimuth * m_pi_degree / m_pi_radian;
+	coordinates_polar = radian_polar * m_pi_degree / m_pi_radian;
 
 }
