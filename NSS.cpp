@@ -204,8 +204,8 @@ void DNSS::sortIntoBucket()
 
 	Concurrency::parallel_for(0, nSizePoints, [&](int idx)
 	{
-		float coord_R_azimuth = 0;
-		float coord_R_polar = 0;
+		float coord_R_azimuth = 0.f;
+		float coord_R_polar = 0.f;
 		computeSphericalCoordinate(glm::normalize(m_normals_rotational[idx]), coord_R_azimuth, coord_R_polar);
 		int index_R_azimuth = static_cast<int>(std::floorf(fabs(coord_R_azimuth) / m_thetaForSort));
 		int index_R_polar = static_cast<int>(std::floorf(coord_R_polar / m_thetaForSort));
@@ -213,8 +213,8 @@ void DNSS::sortIntoBucket()
 
 		bucketRotation[index_R].push_back(std::make_pair(idx, m_rotationalReturns[idx]));
 
-		float coord_T_azimuth = 0;
-		float coord_T_polar = 0;
+		float coord_T_azimuth = 0.f;
+		float coord_T_polar = 0.f;
 		computeSphericalCoordinate(glm::normalize(m_normals_original[idx]), coord_T_azimuth, coord_T_polar);
 		int index_T_azimuth = static_cast<int>(std::floorf((coord_T_azimuth + m_pi_degree) / m_thetaForSort));
 		int index_T_polar = static_cast<int>(std::floorf(coord_T_polar / m_thetaForSort));
