@@ -296,7 +296,7 @@ void DNSS::computeCentroidandNormalize()
 
 int DNSS::pickPoint()
 {
-	int bid_top;
+	int bid_top=0;
 	typeBucket bType_top, bType_another;
 
 	if (m_bucketList_R.front().constraints <= m_bucketList_T.front().constraints)
