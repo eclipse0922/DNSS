@@ -308,6 +308,7 @@ int DNSS::pickPoint()
 		bType_another = typeBucket::Rotation;
 	}
 	int pid = -1;
+
 	switch (bType_top)
 	{
 	case typeBucket::Rotation:
