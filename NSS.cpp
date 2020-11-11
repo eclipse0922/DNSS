@@ -244,6 +244,7 @@ void DNSS::sortIntoBucket()
 	Concurrency::parallel_for(0, nSizeBucketR, [&](int idx)
 	{
 		//pop_back만 가능하므로 return값이 큰 것이 뒤로 가도록 정렬
+		//ascendin order sort because only pop_back is possible
 		std::sort(m_bucketRotation[idx].begin(), m_bucketRotation[idx].end(),
 			[](const std::pair<int, float>& lhs, const std::pair<int, float>& rhs) {
 			return lhs.second < rhs.second;
