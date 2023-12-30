@@ -7,10 +7,11 @@
 
 void NSS::normalSpaceSampling(const float &sample_rate, std::vector<glm::fvec3> &sampled_vertices, std::vector<glm::fvec3> &sampled_normals)
 {
-	std::vector< std::vector<int> > normbuckets;
+	std::vector<std::vector<int>> normbuckets;
 	sort_into_buckets(m_original_normals, normbuckets);
 	int ndesired = int(ceil(sample_rate * m_original_vertices.size()));
-	sampled_vertices.clear();  sampled_normals.clear();
+	sampled_vertices.clear();
+	sampled_normals.clear();
 	while (sampled_vertices.size() < ndesired)
 	{
 		for (int i = 0; i < normbuckets.size(); i++)
@@ -26,11 +27,11 @@ void NSS::normalSpaceSampling(const float &sample_rate, std::vector<glm::fvec3> 
 	}
 }
 
-void NSS::sort_into_buckets(const std::vector<glm::fvec3> &n, std::vector< std::vector<int>> &normbuckets)
+void NSS::sort_into_buckets(const std::vector<glm::fvec3> &n, std::vector<std::vector<int>> &normbuckets)
 {
 	const int Q = 4;
 	const float Qsqrt1_2 = 2.8284f;
-	normbuckets.resize(3 * Q*Q);
+	normbuckets.resize(3 * Q * Q);
 	for (int i = 0; i < n.size(); i++)
 	{
 		const float *N = &n[i][0];
@@ -46,7 +47,8 @@ void NSS::sort_into_buckets(const std::vector<glm::fvec3> &n, std::vector< std::
 				u = (N[0] > 0) ? N[1] : -N[1];
 				v = (N[0] > 0) ? N[2] : -N[2];
 			}
-			else {
+			else
+			{
 				A = 2;
 				u = (N[2] > 0) ? N[0] : -N[0];
 				v = (N[2] > 0) ? N[1] : -N[1];
@@ -78,8 +80,8 @@ void NSS::sort_into_buckets(const std::vector<glm::fvec3> &n, std::vector< std::
 void DNSS::dualNormalSpaceSampling(const float &sample_rate, std::vector<glm::fvec3> &sampled_vertices, std::vector<glm::fvec3> &sampled_normals)
 {
 
-	//Timer timer;
-//	timer.start();
+	// Timer timer;
+	//	timer.start();
 	computeCentroidandNormalize();
 	computeRotationalNormals();
 	computeRotationalReturn();
@@ -88,8 +90,10 @@ void DNSS::dualNormalSpaceSampling(const float &sample_rate, std::vector<glm::fv
 	initBucketB();
 	int ndesired = int(ceil(sample_rate * m_vertices_original.size()));
 
-	sampled_vertices.clear();  sampled_normals.clear();
-	sampled_vertices.reserve(ndesired);  sampled_normals.reserve(ndesired);
+	sampled_vertices.clear();
+	sampled_normals.clear();
+	sampled_vertices.reserve(ndesired);
+	sampled_normals.reserve(ndesired);
 
 	while (sampled_vertices.size() < ndesired)
 	{
@@ -97,9 +101,10 @@ void DNSS::dualNormalSpaceSampling(const float &sample_rate, std::vector<glm::fv
 
 		sampled_vertices.emplace_back(m_vertices_original[pid]);
 		sampled_normals.emplace_back(m_normals_original[pid]);
-		//updateBucketOrder();
+		// updateBucketOrder();
 	}
-	sampled_vertices.shrink_to_fit();  sampled_normals.shrink_to_fit();
+	sampled_vertices.shrink_to_fit();
+	sampled_normals.shrink_to_fit();
 	//	timer.stop();
 	//	std::wcout << L"DNSS sampling time : " << timer.peek_msec() << L" (ms)" << std::endl;
 }
@@ -111,7 +116,7 @@ void DNSS::computeRotationalReturn()
 	m_rotationalReturns.resize(nSize);
 
 	Concurrency::parallel_for(0, nSize, [&](int idx)
-	{
+							  {
 		float dot_pn = glm::dot(glm::normalize(m_vertices_normalized[idx]), m_normals_original[idx]);
 		float beta = acos(dot_pn);// / (glm::l2Norm(m_vertices_normalized[idx])*glm::l2Norm(m_normals_original[idx])));
 		float p_abs = glm::l2Norm(m_vertices_normalized[idx]);
@@ -132,9 +137,7 @@ void DNSS::computeRotationalReturn()
 		float rotationalReturnNegative = p_abs * gamma_negative / m_thetaForReturn;
 
 		float RR = fmax(rotationalReturnPositive, rotationalReturnNegative);
-		m_rotationalReturns[idx] = RR;
-	}
-	);
+		m_rotationalReturns[idx] = RR; });
 }
 void DNSS::initBucketB()
 {
@@ -174,8 +177,8 @@ void DNSS::sortIntoBucket()
 	std::wcout << L"niszeP_points : " << nSizePoints << std::endl;
 	int nSizeBucketR = m_bucketsizeR_azimuth * m_bucketsizeR_polar;
 	int nSizeBucketT = m_bucketsizeT_azimuth * m_bucketsizeT_polar;
-	// concurrent vector에 넣고 정렬해서 멤버 변수에 다시 넣는다.
-	// 이유: concurrent_vector pop_back 사용불가
+	// Put it into a concurrent vector, sort it, and put it back into a member variable.
+	// Reason: concurrent_vector pop_back not available
 	std::vector<concurrency::concurrent_vector<std::pair<int, float>>> bucketRotation;
 	std::vector<concurrency::concurrent_vector<int>> bucketTranslation;
 	m_vecForBIdx.clear();
@@ -191,19 +194,15 @@ void DNSS::sortIntoBucket()
 	m_bucketTranslation.clear();
 	m_bucketTranslation.resize(nSizeBucketT);
 
-
-	//버켓 공간 확보 - 버켓에 완전히 균일하게 들어가는 것이 아니고 한쪽에 몰릴수도 있어, 버켓 사이즈로 나누지 않고 10으로 나눔(임의로 정한 수)
+	// Bucket space - they don't fit perfectly evenly into the bucket and may be crowded to one side,
+	// so instead of dividing by the bucket size, divide by 10 (an arbitrary number) to make sure there's enough space.
 	Concurrency::parallel_for(0, nSizeBucketR, [&](int idx)
-	{
-		bucketRotation[idx].reserve(nSizePoints / 10);
-	});
+							  { bucketRotation[idx].reserve(nSizePoints / 10); });
 	Concurrency::parallel_for(0, nSizeBucketT, [&](int idx)
-	{
-		bucketTranslation[idx].reserve(nSizePoints / 10);
-	});
+							  { bucketTranslation[idx].reserve(nSizePoints / 10); });
 
 	Concurrency::parallel_for(0, nSizePoints, [&](int idx)
-	{
+							  {
 		float coord_R_azimuth = 0.f;
 		float coord_R_polar = 0.f;
 		computeSphericalCoordinate(glm::normalize(m_normals_rotational[idx]), coord_R_azimuth, coord_R_polar);
@@ -222,42 +221,29 @@ void DNSS::sortIntoBucket()
 
 		bucketTranslation[index_T].push_back(idx);
 
-		m_vecForBIdx[idx] = std::make_pair(index_R, index_T);
-	}
-	);
+		m_vecForBIdx[idx] = std::make_pair(index_R, index_T); });
 
 	Concurrency::parallel_for(0, nSizeBucketR, [&](int idx)
-	{
-		bucketRotation[idx].shrink_to_fit();
-		m_bucketRotation[idx].resize(bucketRotation[idx].size());
-		std::move(bucketRotation[idx].begin(), bucketRotation[idx].end(), m_bucketRotation[idx].begin());
-
-	});
+							  {
+								  bucketRotation[idx].shrink_to_fit();
+								  m_bucketRotation[idx].resize(bucketRotation[idx].size());
+								  std::move(bucketRotation[idx].begin(), bucketRotation[idx].end(), m_bucketRotation[idx].begin()); });
 	Concurrency::parallel_for(0, nSizeBucketT, [&](int idx)
-	{
+							  {
 		bucketTranslation[idx].shrink_to_fit();
 		m_bucketTranslation[idx].resize(bucketTranslation[idx].size());
-		std::move(bucketTranslation[idx].begin(), bucketTranslation[idx].end(), m_bucketTranslation[idx].begin());
-	});
-
+		std::move(bucketTranslation[idx].begin(), bucketTranslation[idx].end(), m_bucketTranslation[idx].begin()); });
 
 	Concurrency::parallel_for(0, nSizeBucketR, [&](int idx)
-	{
-		//pop_back만 가능하므로 return값이 큰 것이 뒤로 가도록 정렬
+							  {
 		//ascendin order sort because only pop_back is possible
 		std::sort(m_bucketRotation[idx].begin(), m_bucketRotation[idx].end(),
 			[](const std::pair<int, float>& lhs, const std::pair<int, float>& rhs) {
 			return lhs.second < rhs.second;
-		});
-	});
-
-
-
+		}); });
 
 	Concurrency::parallel_for(0, nSizeBucketT, [&](int idx)
-	{
-		std::random_shuffle(m_bucketTranslation[idx].begin(), m_bucketTranslation[idx].end());
-	});
+							  { std::random_shuffle(m_bucketTranslation[idx].begin(), m_bucketTranslation[idx].end()); });
 }
 
 void DNSS::computeRotationalNormals()
@@ -265,38 +251,32 @@ void DNSS::computeRotationalNormals()
 	int nSize = static_cast<int>(m_normals_original.size());
 	m_normals_rotational.resize(m_normals_original.size());
 	Concurrency::parallel_for(0, nSize, [&](int idx)
-	{
-		m_normals_rotational[idx] = glm::cross(m_vertices_normalized[idx], m_normals_original[idx]);
-	});
+							  { m_normals_rotational[idx] = glm::cross(m_vertices_normalized[idx], m_normals_original[idx]); });
 }
 
 void DNSS::computeCentroidandNormalize()
 {
 	Eigen::Matrix3Xf vertices = Eigen::Map<const Eigen::Matrix3Xf>(&m_vertices_original[0].x, 3, m_vertices_original.size());
 	Eigen::Vector3f centroid_eigen = vertices.rowwise().mean();
-	glm::fvec3 centroid = (glm::fvec3&)(*centroid_eigen.data());
+	glm::fvec3 centroid = (glm::fvec3 &)(*centroid_eigen.data());
 
 	int nSize = static_cast<int>(m_vertices_original.size());
 	m_vertices_normalized.clear();
 	m_vertices_normalized.resize(nSize);
 	Concurrency::parallel_for(0, nSize, [&](int idx)
-	{
-		m_vertices_normalized[idx] = m_vertices_original[idx] - centroid;
-	});
+							  { m_vertices_normalized[idx] = m_vertices_original[idx] - centroid; });
 	Eigen::Matrix3Xf vertices_moved = Eigen::Map<const Eigen::Matrix3Xf>(&m_vertices_normalized[0].x, 3, m_vertices_normalized.size());
-	//normalize factor
+	// normalize factor
 	Eigen::Vector3f centroid_eigen_moved = vertices_moved.rowwise().maxCoeff();
 	float Lmax = vertices_moved.colwise().norm().maxCoeff();
 	float L_inverse = 1 / Lmax;
 	Concurrency::parallel_for(0, nSize, [&](int idx)
-	{
-		m_vertices_normalized[idx] = m_vertices_normalized[idx] * L_inverse;
-	});
+							  { m_vertices_normalized[idx] = m_vertices_normalized[idx] * L_inverse; });
 }
 
 int DNSS::pickPoint()
 {
-	int bid_top=0;
+	int bid_top = 0;
 	typeBucket bType_top, bType_another;
 
 	if (m_bucketList_R.front().constraints <= m_bucketList_T.front().constraints)
@@ -319,10 +299,8 @@ int DNSS::pickPoint()
 	{
 		if (m_bucketRotation[bid_top].empty())
 		{
-			std::wcout << L"bucket id : " << bid_top <<
-				" and bucket size : " << m_bucketRotation[bid_top].size() << std::endl;
+			std::wcout << L"bucket id : " << bid_top << " and bucket size : " << m_bucketRotation[bid_top].size() << std::endl;
 			std::wcout << L"constraints : " << m_bucketList_R[bid_top].constraints << std::endl;
-
 		}
 
 		pid = m_bucketRotation[bid_top].back().first;
@@ -335,13 +313,15 @@ int DNSS::pickPoint()
 		if (!m_bucketTranslation[bid_T].empty())
 		{
 			m_bucketTranslation[bid_T].erase(std::remove_if(m_bucketTranslation[bid_T].begin(), m_bucketTranslation[bid_T].end(),
-				[&pid](const int &elem) { return elem == pid; }),
-				m_bucketTranslation[bid_T].end());
+															[&pid](const int &elem)
+															{ return elem == pid; }),
+											 m_bucketTranslation[bid_T].end());
 		}
 		if (m_bucketTranslation[bid_T].empty())
 		{
 			auto it = std::find_if(m_bucketList_T.begin(), m_bucketList_T.end(),
-				[bid_T](const structBucket & element) { return element.bucketIndex == bid_T; });
+								   [bid_T](const structBucket &element)
+								   { return element.bucketIndex == bid_T; });
 			it->constraints = FLT_MAX;
 			updateBucketOrder(bType_another);
 		}
@@ -357,12 +337,10 @@ int DNSS::pickPoint()
 	{
 		if (m_bucketTranslation[bid_top].empty())
 		{
-			std::wcout << L"bucket id : " << bid_top <<
-				" and bucket size : " << m_bucketTranslation[bid_top].size() << std::endl;
+			std::wcout << L"bucket id : " << bid_top << " and bucket size : " << m_bucketTranslation[bid_top].size() << std::endl;
 			std::wcout << L"constraints : " << m_bucketList_T[bid_top].constraints << std::endl;
 		}
 		pid = m_bucketTranslation[bid_top].back();
-
 
 		m_bucketList_T.front().constraints += 1.0f;
 		m_bucketTranslation[bid_top].pop_back();
@@ -372,13 +350,15 @@ int DNSS::pickPoint()
 		if (!m_bucketRotation[bid_R].empty())
 		{
 			m_bucketRotation[bid_R].erase(std::remove_if(m_bucketRotation[bid_R].begin(), m_bucketRotation[bid_R].end(),
-				[&pid](const std::pair<int, float> &elem) { return elem.first == pid; }),
-				m_bucketRotation[bid_R].end());
+														 [&pid](const std::pair<int, float> &elem)
+														 { return elem.first == pid; }),
+										  m_bucketRotation[bid_R].end());
 		}
 		if (m_bucketRotation[bid_R].empty())
 		{
 			auto it = std::find_if(m_bucketList_R.begin(), m_bucketList_R.end(),
-				[bid_R](const structBucket & element) { return element.bucketIndex == bid_R; });
+								   [bid_R](const structBucket &element)
+								   { return element.bucketIndex == bid_R; });
 			it->constraints = FLT_MAX;
 			updateBucketOrder(bType_another);
 		}
@@ -398,18 +378,19 @@ void DNSS::updateBucketOrder(typeBucket &bType)
 	{
 	case typeBucket::Rotation:
 		std::sort(m_bucketList_R.begin(), m_bucketList_R.end(),
-			[](const structBucket& lhs, const structBucket & rhs) {
-			return lhs.constraints < rhs.constraints;
-		});
+				  [](const structBucket &lhs, const structBucket &rhs)
+				  {
+					  return lhs.constraints < rhs.constraints;
+				  });
 		break;
 	case typeBucket::Translation:
 		std::sort(m_bucketList_T.begin(), m_bucketList_T.end(),
-			[](const structBucket& lhs, const structBucket & rhs) {
-			return lhs.constraints < rhs.constraints;
-		});
+				  [](const structBucket &lhs, const structBucket &rhs)
+				  {
+					  return lhs.constraints < rhs.constraints;
+				  });
 		break;
 	}
-
 }
 
 void DNSS::computeSphericalCoordinate(const glm::fvec3 &normal, float &coordinates_azimuth, float &coordinates_polar)
@@ -418,5 +399,4 @@ void DNSS::computeSphericalCoordinate(const glm::fvec3 &normal, float &coordinat
 	float radian_polar = acos(normal.z);
 	coordinates_azimuth = radian_azimuth * m_pi_degree / m_pi_radian;
 	coordinates_polar = radian_polar * m_pi_degree / m_pi_radian;
-
 }

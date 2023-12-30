@@ -49,29 +49,25 @@
 class NSS
 {
 public:
-
-	/** \brief normal space sampling 수행 함수
-	* \param[in] sample_rate 샘플링레이트  최대 1.0  비율 곱해서 개수 채워질때까지 반복수행
-	* \param[out] sampled_vertices 샘플링한 포인트 데이터
-	* \param[out] sampled_normals 샘플링한 노멀 데이터
-	*/
+	/** \brief Function to perform normal space sampling
+	 * \param[in] sample_rate The sampling rate, maximum 1.0. Repeat until the number is filled by multiplying the rate.
+	 * \param[out] sampled_vertices Data of sampled points.
+	 * \param[out] sampled_normals Data of sampled normals.
+	 */
 	void normalSpaceSampling(const float &sample_rate, std::vector<glm::fvec3> &sampled_vertices, std::vector<glm::fvec3> &sampled_normals);
 
-	/** \brief sampling하기위한 원본 데이터 지정위한 함수
-	* \param[in] pointData 포인트 데이터
-	* \param[in] normalData 노멀 데이터
-	*/
-	void setInputCloud(const std::vector<glm::fvec3> original_vertices, const std::vector<glm::fvec3> original_normals)
-	{
-		m_original_vertices = original_vertices;
-		m_original_normals = original_normals;
-	}
+	/** \brief Function to specify the original data for sampling
+	 * \param[in] pointData Point data.
+	 * \param[in] normalData Normal data.
+	 */
+	void setInputCloud(const std::vector<glm::fvec3> original_vertices, const std::vector<glm::fvec3> original_normals);
+
 private:
-	/** \brief normal 값을 기준으로 인덱스 생성한 뒤 인덱스 값을 보고 버켓에 저장
-	* \param[in] const std::vector<glm::fvec3> &n 일련의 노말(normal) 값
-	* \param[out] std::vector< std::vector<int>> 인덱스가 들어간 버켓
-	*/
-	void sort_into_buckets(const std::vector<glm::fvec3> &n, std::vector< std::vector<int>> &normbuckets);
+	/** \brief Create indices based on the normal values and then store the index values in buckets.
+	 * \param[in] const std::vector<glm::fvec3> &n A series of normal values.
+	 * \param[out] std::vector< std::vector<int>> Buckets containing indices.
+	 */
+	void sort_into_buckets(const std::vector<glm::fvec3> &n, std::vector<std::vector<int>> &normbuckets);
 
 private:
 	std::vector<glm::fvec3> m_original_vertices;
@@ -82,22 +78,18 @@ private:
  * Dual Normal Space Sampling
  * Kwok, Tsz-Ho. "DNSS: Dual-Normal-Space Sampling for 3-D ICP Registration."
  * IEEE Transactions on Automation Science and Engineering (2018).
- * 기존 NSS에 rotation 정보도 포함시켜서 샘플링
- * adding Rotational Information to NSS
- * 직접 구현
- * 작성자:  seweon.jeon
- * 2018.04.09
+ * Sampling including rotation information in addition to the original NSS.
+ * Adding Rotational Information to NSS
+ * Author: seweon.jeon
+ * Date: 2018.04.09
  **/
 
 class DNSS
 {
 public:
-	void setInputCloud(const std::vector<glm::fvec3> original_vertices, const std::vector<glm::fvec3> original_normals)
-	{
-		m_vertices_original = original_vertices;
-		m_normals_original = original_normals;
-	}
+	void setInputCloud(const std::vector<glm::fvec3> original_vertices, const std::vector<glm::fvec3> original_normals);
 	void dualNormalSpaceSampling(const float &sample_rate, std::vector<glm::fvec3> &sampled_vertices, std::vector<glm::fvec3> &sampled_normals);
+
 private:
 	struct structBucket
 	{
@@ -105,7 +97,7 @@ private:
 		float constraints = 0;
 	};
 
-	enum class typeBucket :int
+	enum class typeBucket : int
 	{
 		Rotation = 0,
 		Translation,
@@ -121,15 +113,14 @@ private:
 
 	void updateBucketOrder(typeBucket &bType);
 	/**
-	 * \brief Normal(nx,ny,nz) 받아서 azimuth,polar 값계산
-	 *   논문과 iso rule 각각에서 azimuth, polar angle  지칭하는 것이 달라 iso rule에 맞춤
-	 *     i followed ISO rule for spherical coordinate system naming
-	 *  iso rule    theta -  polar angle   (0~ pi) phi - azimuth angle( 0~2pi)
-	 *  논문         theta -  azimuth angle (0~2pi) phi - polar angle  ( 0~pi)
-	 *  pi== 180; 2pi ==360;
-	 * \param[in] glm::fvec3 normal 값
-	 * \param[out] float coordinates_theta
-	 * \param[out] float coordinates_phi
+	 * \brief Calculates azimuth and polar values based on Normal (nx, ny, nz)
+	 * \note The naming of azimuth and polar angles differ in the paper and ISO rule, so this follows the ISO rule
+	 * ISO rule: theta - polar angle (0~ pi), phi - azimuth angle (0~2pi)
+	 * Paper: theta - azimuth angle (0~2pi), phi - polar angle (0~pi)
+	 * pi = 180; 2pi = 360;
+	 * \param[in] glm::fvec3 Normal value.
+	 * \param[out] float coordinates_azimuth.
+	 * \param[out] float coordinates_polar.
 	 */
 	void computeSphericalCoordinate(const glm::fvec3 &normal, float &coordinates_azimuth, float &coordinates_polar);
 
@@ -146,11 +137,9 @@ private:
 	std::vector<float> m_rotationalReturns;
 
 	/*
-	*
-	 *   \note 논문과 iso rule 각각에서 azimuth, polar angle 지칭하는 것이 달라 iso rule에 맞춤
-	 *      i followed ISO rule for spherical coordinate system naming   
-	 *		iso rule    theta -  polar angle   (0~180) phi - azimuth angle( 0~360)
-	 *		paper       theta -  azimuth angle (0~360) phi - polar angle( 0~180)
+	 * \note The naming of azimuth and polar angles differ in the paper and ISO rule, so this follows the ISO rule
+	 * ISO rule: theta - polar angle (0~180), phi - azimuth angle (0~360)
+	 * Paper: theta - azimuth angle (0~360), phi - polar angle (0~180)
 	 */
 	static const int m_bucketsizeT_azimuth = 12;
 	static const int m_bucketsizeT_polar = 6;
@@ -163,4 +152,3 @@ private:
 	const float m_thetaForSort = m_pi_degree / 6;
 	const float m_thetaForReturn = m_pi_degree / 4;
 };
-
