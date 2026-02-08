@@ -26,6 +26,7 @@ jobs:
           CONFIG__MODEL_TURBO: "openai/Qwen/Qwen3-Coder-Next-FP8"
           CONFIG__FALLBACK_MODELS: '["openai/Qwen/Qwen3-Coder-Next-FP8"]'
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "32768"
+          CONFIG__RESPONSE_LANGUAGE: "ko-kr"
           
           # 리뷰 상세도 높이기
           PR_REVIEWER__NUM_CODE_SUGGESTIONS: "5"
