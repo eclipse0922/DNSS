@@ -27,6 +27,16 @@ jobs:
           CONFIG__FALLBACK_MODELS: '["openai/Qwen/Qwen3-Coder-Next-FP8"]'
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "32768"
           
+          # 리뷰 상세도 높이기
+          PR_REVIEWER__NUM_CODE_SUGGESTIONS: "5"
+          PR_REVIEWER__INLINE_CODE_COMMENTS: "true"
+          PR_REVIEWER__REQUIRE_SCORE_REVIEW: "true"
+          PR_REVIEWER__REQUIRE_TESTS_REVIEW: "true"
+          PR_REVIEWER__REQUIRE_SECURITY_REVIEW: "true"
+          PR_REVIEWER__REQUIRE_ESTIMATE_EFFORT_TO_REVIEW: "true"
+          PR_REVIEWER__PERSISTENT_COMMENT: "true"
+          PR_REVIEWER__EXTRA_INSTRUCTIONS: "코드의 버그, 성능 문제, 메모리 누수, 스레드 안전성 문제를 자세히 분석해주세요. 각 이슈에 대해 구체적인 수정 방법도 제안해주세요."
+          
         run: |
           source ~/pr-agent-env/bin/activate
           
