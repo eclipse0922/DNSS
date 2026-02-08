@@ -1,0 +1,34 @@
+name: PR-Agent (Self-hosted Nemotron)
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  issue_comment:
+    types: [created]
+
+jobs:
+  pr_agent_job:
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: self-hosted
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Run PR-Agent
+        uses: qodo-ai/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+          OPENAI.KEY: ${{ secrets.OPENAI_KEY }}
+          OPENAI.API_BASE: "http://localhost:8000/v1"
+          
+          config.model: "openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"
+          config.model_turbo: "openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"
+          config.fallback_models: '["openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"]'
+          config.custom_model_max_tokens: "32768"
+          
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "true"
