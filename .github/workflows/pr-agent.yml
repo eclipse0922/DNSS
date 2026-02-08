@@ -18,18 +18,25 @@ jobs:
     steps:
       - name: Run PR-Agent
         env:
-          # GitHub 토큰 (이름 주의!)
           GITHUB__USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-          # OpenAI 설정
           OPENAI__KEY: ${{ secrets.OPENAI_KEY }}
           OPENAI__API_BASE: "http://localhost:8000/v1"
           
-          # 모델 설정
           CONFIG__MODEL: "openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"
           CONFIG__MODEL_TURBO: "openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"
           CONFIG__FALLBACK_MODELS: '["openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"]'
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "32768"
+          
+          # 구조화된 출력 개선 설정 추가
+          CONFIG__DUPLICATE_EXAMPLES: "true"
+          CONFIG__VERBOSITY_LEVEL: "0"
+          
+          # 리뷰 간소화
+          PR_REVIEWER__NUM_CODE_SUGGESTIONS: "2"
+          PR_REVIEWER__INLINE_CODE_COMMENTS: "false"
+          PR_REVIEWER__REQUIRE_SECURITY_REVIEW: "false"
+          PR_REVIEWER__REQUIRE_ESTIMATE_EFFORT_TO_REVIEW: "false"
+          
         run: |
           source ~/pr-agent-env/bin/activate
           pr-agent --pr_url "${{ github.event.pull_request.html_url }}" review
