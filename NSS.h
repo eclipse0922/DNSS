@@ -1,154 +1,193 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <algorithm>
+#include <cstdint>
 #include <vector>
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
-#include <Eigen/Core>
-#include <concurrent_queue.h>
-#include <concurrent_vector.h>
-#include <concurrent_unordered_map.h>
 
-/*
- * normal space sampling algorithm
-*
- *
- * original source code: https://github.com/kyzyx/scanalyze/
- *Scanalyze (version 1.0) license information
- -------------------------------------------
+#if __has_include(<glm/vec3.hpp>)
+#include <glm/vec3.hpp>
+#else
+namespace glm
+{
+struct fvec3
+{
+	float x;
+	float y;
+	float z;
 
- Scanalyze is copyright (c) 2002 the Board of Trustees of The Leland
- Stanford Junior University. All rights reserved.
+	constexpr fvec3()
+		: x(0.0f), y(0.0f), z(0.0f)
+	{
+	}
 
- This software is covered by the Stanford Computer Graphics Laboratory's
- General Software License. This license is royalty-free, nonexclusive,
- and nontransferable.  The terms and conditions of this license are
- viewable at this URL:
+	constexpr explicit fvec3(float value)
+		: x(value), y(value), z(value)
+	{
+	}
 
- http://graphics.stanford.edu/software/license.html
+	constexpr fvec3(float x_value, float y_value, float z_value)
+		: x(x_value), y(y_value), z(z_value)
+	{
+	}
 
+	float &operator[](int index)
+	{
+		return (&x)[index];
+	}
 
- The scanalyze software also builds upon a number of 3rd party
- software components, some of which may be copyrighted:
+	const float &operator[](int index) const
+	{
+		return (&x)[index];
+	}
 
- 1. Togl
- 2. Tcl/Tk
- 3. STL
- 4. Template Numerical Toolkit (TNT)
- 5. Janne Heikkila's Camera Calibration Toolbox
- 6. Graphics Gems
- 7. Miscellaneous SGI code
+	fvec3 &operator+=(const fvec3 &rhs)
+	{
+		x += rhs.x;
+		y += rhs.y;
+		z += rhs.z;
+		return *this;
+	}
 
- Further information about each of these software components and
- their terms of usage is included below:
+	fvec3 &operator-=(const fvec3 &rhs)
+	{
+		x -= rhs.x;
+		y -= rhs.y;
+		z -= rhs.z;
+		return *this;
+	}
 
- ----------------------------------------------------------------------
- *
- **/
+	fvec3 &operator*=(float scalar)
+	{
+		x *= scalar;
+		y *= scalar;
+		z *= scalar;
+		return *this;
+	}
+
+	fvec3 &operator/=(float scalar)
+	{
+		x /= scalar;
+		y /= scalar;
+		z /= scalar;
+		return *this;
+	}
+};
+
+inline fvec3 operator+(fvec3 lhs, const fvec3 &rhs)
+{
+	lhs += rhs;
+	return lhs;
+}
+
+inline fvec3 operator-(fvec3 lhs, const fvec3 &rhs)
+{
+	lhs -= rhs;
+	return lhs;
+}
+
+inline fvec3 operator-(const fvec3 &value)
+{
+	return fvec3(-value.x, -value.y, -value.z);
+}
+
+inline fvec3 operator*(fvec3 lhs, float scalar)
+{
+	lhs *= scalar;
+	return lhs;
+}
+
+inline fvec3 operator*(float scalar, fvec3 rhs)
+{
+	rhs *= scalar;
+	return rhs;
+}
+
+inline fvec3 operator/(fvec3 lhs, float scalar)
+{
+	lhs /= scalar;
+	return lhs;
+}
+} // namespace glm
+#endif
+
 class NSS
 {
 public:
-	/** \brief Function to perform normal space sampling
-	 * \param[in] sample_rate The sampling rate, maximum 1.0. Repeat until the number is filled by multiplying the rate.
+	struct Options
+	{
+		int azimuth_bins = 12;
+		int z_bins = 6;
+		std::uint32_t random_seed = 0x12345678u;
+		bool deterministic = true;
+	};
+
+	NSS();
+	explicit NSS(const Options &options);
+
+	void setOptions(const Options &options);
+	const Options &getOptions() const;
+
+	/** \brief Function to perform normal space sampling.
+	 * \param[in] sample_rate The sampling rate in [0, 1].
 	 * \param[out] sampled_vertices Data of sampled points.
 	 * \param[out] sampled_normals Data of sampled normals.
 	 */
 	void normalSpaceSampling(const float &sample_rate, std::vector<glm::fvec3> &sampled_vertices, std::vector<glm::fvec3> &sampled_normals);
 
-	/** \brief Function to specify the original data for sampling
-	 * \param[in] pointData Point data.
-	 * \param[in] normalData Normal data.
+	/** \brief Function to specify the original data for sampling.
+	 * \param[in] original_vertices Point data.
+	 * \param[in] original_normals Normal data.
 	 */
-	void setInputCloud(const std::vector<glm::fvec3> original_vertices, const std::vector<glm::fvec3> original_normals);
+	void setInputCloud(const std::vector<glm::fvec3> &original_vertices, const std::vector<glm::fvec3> &original_normals);
 
 private:
-	/** \brief Create indices based on the normal values and then store the index values in buckets.
-	 * \param[in] const std::vector<glm::fvec3> &n A series of normal values.
-	 * \param[out] std::vector< std::vector<int>> Buckets containing indices.
-	 */
-	void sort_into_buckets(const std::vector<glm::fvec3> &n, std::vector<std::vector<int>> &normbuckets);
+	int normalToBucketIndex(const glm::fvec3 &normal) const;
+	int targetSampleCount(float sample_rate) const;
+	std::uint32_t nextSeed();
 
 private:
+	Options m_options;
+	std::uint32_t m_runtime_seed = m_options.random_seed;
 	std::vector<glm::fvec3> m_original_vertices;
 	std::vector<glm::fvec3> m_original_normals;
 };
 
-/*
- * Dual Normal Space Sampling
- * Kwok, Tsz-Ho. "DNSS: Dual-Normal-Space Sampling for 3-D ICP Registration."
- * IEEE Transactions on Automation Science and Engineering (2018).
- * Sampling including rotation information in addition to the original NSS.
- * Adding Rotational Information to NSS
- * Author: seweon.jeon
- * Date: 2018.04.09
- **/
-
 class DNSS
 {
 public:
-	void setInputCloud(const std::vector<glm::fvec3> original_vertices, const std::vector<glm::fvec3> original_normals);
+	struct Options
+	{
+		int t_azimuth_bins = 12;
+		int t_z_bins = 6;
+		int r_azimuth_bins = 6;
+		int r_z_bins = 6;
+		float theta_for_return_radians = 0.78539816339f; // pi / 4
+		bool initialize_rotation_buckets = true;
+		bool enable_cuda = false;
+		std::uint32_t random_seed = 0x9e3779b9u;
+		bool deterministic = true;
+	};
+
+	DNSS();
+	explicit DNSS(const Options &options);
+
+	void setOptions(const Options &options);
+	const Options &getOptions() const;
+
+	void setUseCuda(bool enable);
+	bool getUseCuda() const;
+
+	void setInputCloud(const std::vector<glm::fvec3> &original_vertices, const std::vector<glm::fvec3> &original_normals);
 	void dualNormalSpaceSampling(const float &sample_rate, std::vector<glm::fvec3> &sampled_vertices, std::vector<glm::fvec3> &sampled_normals);
 
 private:
-	struct structBucket
-	{
-		int bucketIndex = 0;
-		float constraints = 0;
-	};
-
-	enum class typeBucket : int
-	{
-		Rotation = 0,
-		Translation,
-	};
-
-	void computeRotationalReturn();
-	void initBucketB();
-	void sortIntoBucket();
-	void computeRotationalNormals();
-	void computeCentroidandNormalize();
-
-	int pickPoint();
-
-	void updateBucketOrder(typeBucket &bType);
-	/**
-	 * \brief Calculates azimuth and polar values based on Normal (nx, ny, nz)
-	 * \note The naming of azimuth and polar angles differ in the paper and ISO rule, so this follows the ISO rule
-	 * ISO rule: theta - polar angle (0~ pi), phi - azimuth angle (0~2pi)
-	 * Paper: theta - azimuth angle (0~2pi), phi - polar angle (0~pi)
-	 * pi = 180; 2pi = 360;
-	 * \param[in] glm::fvec3 Normal value.
-	 * \param[out] float coordinates_azimuth.
-	 * \param[out] float coordinates_polar.
-	 */
-	void computeSphericalCoordinate(const glm::fvec3 &normal, float &coordinates_azimuth, float &coordinates_polar);
+	int translationalBucketIndex(const glm::fvec3 &normal) const;
+	int rotationalBucketIndex(const glm::fvec3 &rotational_normal) const;
+	int targetSampleCount(float sample_rate) const;
+	std::uint32_t nextSeed();
 
 private:
-	std::vector<structBucket> m_bucketList_R;
-	std::vector<structBucket> m_bucketList_T;
-	std::vector<std::pair<int, int>> m_vecForBIdx;
-	std::vector<std::vector<std::pair<int, float>>> m_bucketRotation;
-	std::vector<std::vector<int>> m_bucketTranslation;
+	Options m_options;
+	std::uint32_t m_runtime_seed = m_options.random_seed;
 	std::vector<glm::fvec3> m_vertices_original;
 	std::vector<glm::fvec3> m_normals_original;
-	std::vector<glm::fvec3> m_vertices_normalized;
-	std::vector<glm::fvec3> m_normals_rotational;
-	std::vector<float> m_rotationalReturns;
-
-	/*
-	 * \note The naming of azimuth and polar angles differ in the paper and ISO rule, so this follows the ISO rule
-	 * ISO rule: theta - polar angle (0~180), phi - azimuth angle (0~360)
-	 * Paper: theta - azimuth angle (0~360), phi - polar angle (0~180)
-	 */
-	static const int m_bucketsizeT_azimuth = 12;
-	static const int m_bucketsizeT_polar = 6;
-	static const int m_bucketsizeR_azimuth = 6;
-	static const int m_bucketsizeR_polar = 6;
-
-	const float m_pi_degree = 180.0f;
-	const float m_pi_radian = 3.141592f;
-	const float m_pi2_degree = 360.0f;
-	const float m_thetaForSort = m_pi_degree / 6;
-	const float m_thetaForReturn = m_pi_degree / 4;
 };
