@@ -1,4 +1,4 @@
-name: PR-Agent (Self-hosted Nemotron)
+name: PR-Agent (Self-hosted Qwen)
 
 on:
   pull_request:
@@ -20,16 +20,48 @@ jobs:
         env:
           GITHUB__USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI__KEY: ${{ secrets.OPENAI_KEY }}
-          OPENAI__API_BASE: "http://localhost:8000/v1"
+          OPENAI__API_BASE: "http://localhost:8888/v1"
           
-          # 모델명 변경
           CONFIG__MODEL: "openai/Qwen/Qwen3-Coder-Next-FP8"
           CONFIG__MODEL_TURBO: "openai/Qwen/Qwen3-Coder-Next-FP8"
           CONFIG__FALLBACK_MODELS: '["openai/Qwen/Qwen3-Coder-Next-FP8"]'
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "32768"
-          CONFIG__DUPLICATE_EXAMPLES: "true"
-
           
         run: |
           source ~/pr-agent-env/bin/activate
-          pr-agent --pr_url "${{ github.event.pull_request.html_url }}" review
+          
+          # PR URL 결정
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            PR_URL="${{ github.event.pull_request.html_url }}"
+            
+            # PR 이벤트: 자동으로 describe, review, improve 실행
+            pr-agent --pr_url "$PR_URL" describe
+            pr-agent --pr_url "$PR_URL" review
+            pr-agent --pr_url "$PR_URL" improve
+            
+          elif [ "${{ github.event_name }}" == "issue_comment" ]; then
+            # 코멘트가 PR에 달린 건지 확인
+            if [ -z "${{ github.event.issue.pull_request.url }}" ]; then
+              echo "Not a PR comment, skipping"
+              exit 0
+            fi
+            
+            PR_URL="${{ github.event.issue.pull_request.url }}"
+            COMMENT="${{ github.event.comment.body }}"
+            
+            echo "Comment: $COMMENT"
+            
+            # 명령어 파싱
+            if [[ "$COMMENT" == "/review"* ]]; then
+              pr-agent --pr_url "$PR_URL" review
+            elif [[ "$COMMENT" == "/describe"* ]]; then
+              pr-agent --pr_url "$PR_URL" describe
+            elif [[ "$COMMENT" == "/improve"* ]]; then
+              pr-agent --pr_url "$PR_URL" improve
+            elif [[ "$COMMENT" == "/ask "* ]]; then
+              QUESTION="${COMMENT#/ask }"
+              pr-agent --pr_url "$PR_URL" ask "$QUESTION"
+            else
+              echo "No valid command found"
+            fi
+          fi
