@@ -17,18 +17,19 @@ jobs:
 
     steps:
       - name: Run PR-Agent
-        uses: qodo-ai/pr-agent@main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GitHub 토큰 (이름 주의!)
+          GITHUB__USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-          OPENAI.KEY: ${{ secrets.OPENAI_KEY }}
-          OPENAI.API_BASE: "http://localhost:8000/v1"
+          # OpenAI 설정
+          OPENAI__KEY: ${{ secrets.OPENAI_KEY }}
+          OPENAI__API_BASE: "http://localhost:8000/v1"
           
-          config.model: "openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"
-          config.model_turbo: "openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"
-          config.fallback_models: '["openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"]'
-          config.custom_model_max_tokens: "32768"
-          
-          github_action_config.auto_review: "true"
-          github_action_config.auto_describe: "true"
-          github_action_config.auto_improve: "true"
+          # 모델 설정
+          CONFIG__MODEL: "openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"
+          CONFIG__MODEL_TURBO: "openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"
+          CONFIG__FALLBACK_MODELS: '["openai/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8"]'
+          CONFIG__CUSTOM_MODEL_MAX_TOKENS: "32768"
+        run: |
+          source ~/pr-agent-env/bin/activate
+          pr-agent --pr_url "${{ github.event.pull_request.html_url }}" review
