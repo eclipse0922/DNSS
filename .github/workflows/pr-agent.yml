@@ -1,4 +1,5 @@
-name: PR-Agent (Self-hosted Qwen)
+# .github/workflows/pr-agent.yml
+name: PR-Agent Auto Review (CLI)
 
 on:
   pull_request:
@@ -18,60 +19,40 @@ jobs:
     steps:
       - name: Run PR-Agent
         env:
+          # CLI 방식은 __ (double underscore) 형식
           GITHUB__USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI__KEY: ${{ secrets.OPENAI_KEY }}
+          OPENAI__KEY: "sk-dummy"
           OPENAI__API_BASE: "http://localhost:8888/v1"
-          
+
           CONFIG__MODEL: "openai/Qwen/Qwen3-Coder-Next-FP8"
           CONFIG__MODEL_TURBO: "openai/Qwen/Qwen3-Coder-Next-FP8"
           CONFIG__FALLBACK_MODELS: '["openai/Qwen/Qwen3-Coder-Next-FP8"]'
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "32768"
-          
-          # 리뷰 상세도 높이기
-          PR_REVIEWER__NUM_CODE_SUGGESTIONS: "5"
-          PR_REVIEWER__INLINE_CODE_COMMENTS: "true"
-          PR_REVIEWER__REQUIRE_SCORE_REVIEW: "true"
-          PR_REVIEWER__REQUIRE_TESTS_REVIEW: "true"
+          CONFIG__RESPONSE_LANGUAGE: "ko-KR"
+
+          PR_REVIEWER__NUM_CODE_SUGGESTIONS: "3"
           PR_REVIEWER__REQUIRE_SECURITY_REVIEW: "true"
-          PR_REVIEWER__REQUIRE_ESTIMATE_EFFORT_TO_REVIEW: "true"
-          PR_REVIEWER__PERSISTENT_COMMENT: "true"
-          PR_REVIEWER__EXTRA_INSTRUCTIONS: "코드의 버그, 성능 문제, 메모리 누수, 스레드 안전성 문제를 자세히 분석해주세요. 각 이슈에 대해 구체적인 수정 방법도 제안해주세요."
-          
+          PR_REVIEWER__EXTRA_INSTRUCTIONS: "버그, 성능 문제, 메모리 누수를 분석해주세요."
+
+          PR_CODE_SUGGESTIONS__NUM_CODE_SUGGESTIONS: "5"
+          PR_CODE_SUGGESTIONS__EXTRA_INSTRUCTIONS: "구체적인 코드 수정안을 제시해주세요."
+
+          PR_DESCRIPTION__PUBLISH_LABELS: "true"
+          PR_DESCRIPTION__ADD_ORIGINAL_USER_DESCRIPTION: "true"
+
         run: |
           source ~/pr-agent-env/bin/activate
-          
-          # PR URL 결정
+
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             PR_URL="${{ github.event.pull_request.html_url }}"
-            
-            # PR 이벤트: 자동으로 describe, review, improve 실행
-            pr-agent --pr_url "$PR_URL" describe
-            pr-agent --pr_url "$PR_URL" review
-            pr-agent --pr_url "$PR_URL" improve
-            
-          elif [ "${{ github.event_name }}" == "issue_comment" ]; then
-            # 코멘트가 PR에 달린 건지 확인
-            if [ -z "${{ github.event.issue.pull_request.url }}" ]; then
-              echo "Not a PR comment, skipping"
-              exit 0
-            fi
-            
-            PR_URL="${{ github.event.issue.pull_request.url }}"
-            COMMENT="${{ github.event.comment.body }}"
-            
-            echo "Comment: $COMMENT"
-            
-            # 명령어 파싱
-            if [[ "$COMMENT" == "/review"* ]]; then
-              pr-agent --pr_url "$PR_URL" review
-            elif [[ "$COMMENT" == "/describe"* ]]; then
-              pr-agent --pr_url "$PR_URL" describe
-            elif [[ "$COMMENT" == "/improve"* ]]; then
-              pr-agent --pr_url "$PR_URL" improve
-            elif [[ "$COMMENT" == "/ask "* ]]; then
-              QUESTION="${COMMENT#/ask }"
-              pr-agent --pr_url "$PR_URL" ask "$QUESTION"
-            else
-              echo "No valid command found"
-            fi
+          else
+            # issue_comment 이벤트 — PR URL 추출
+            PR_URL="${{ github.event.issue.pull_request.html_url }}"
           fi
+
+          echo "PR URL: $PR_URL"
+
+          # 자동 실행: describe → review → improve
+          pr-agent --pr_url "$PR_URL" describe
+          pr-agent --pr_url "$PR_URL" review
+          pr-agent --pr_url "$PR_URL" improve
